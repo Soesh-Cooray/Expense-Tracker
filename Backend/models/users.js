@@ -1,11 +1,12 @@
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
-    id: { type: String, required: true, trim: true, unique: true },
-    isVerified: { type: Boolean, default: false },
-    username: { type: String, required: true, trim: true, unique: true },
+    name: { type: String, required: true, trim: true },
+    username: { type: String, required: true, trim: true, unique: true, lowercase: true},
     password: { type: String, required: true },
-    verificationCode: { type: Number },
+    isVerified: { type: Boolean, default: false},
+    verificationCode: { type: String },
+    timestamps:true
 });
 
 const User = mongoose.model('User', userSchema);
