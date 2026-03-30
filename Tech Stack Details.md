@@ -12,6 +12,7 @@ This project is a comprehensive mobile solution designed to help users:
 - Manage expenses
 - Set savings goals
 - Monitor recurring subscriptions  
+- Set budgets
 
 It utilizes a modern full-stack architecture to ensure:
 - Data security  
@@ -61,11 +62,11 @@ As per the requirement for **Equal Workload Distribution**, each member is respo
 
 | Student | Module | Core CRUD Entity | Focus Area |
 |--------|--------|-----------------|-----------|
-| Member 1 (Lead) | Auth & Savings | SavingsGoal | JWT Auth, Config, Goal Tracking |
+| Member 1 (Lead) | Auth & Savings | SavingsGoal | JWT Auth, Config, Goal       Tracking |
 | Member 2 | Income | Income | Salary & Revenue Management |
 | Member 3 | Expense | Expense | Daily Spending & Categories |
 | Member 4 | Budgeting | Budget | Monthly Limits & Alerts |
-| Member 5 | Subscriptions | Subscription | Recurring Bills & Image Upload |
+| Member 5 | Subscriptions | Subscription | Recurring Bills |
 
 ---
 
