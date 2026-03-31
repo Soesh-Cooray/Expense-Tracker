@@ -30,7 +30,7 @@ We have chosen a high-performance, JavaScript-centric stack to ensure seamless i
 ## 📱 Frontend (Mobile)
 
 - **Framework:** React Native (Expo)  
-- **Navigation:** React Navigation (Tabs & Stacks)  
+- **Navigation:** Expo Router  
 - **State Management:** Zustand (Global store for cross-module sync)  
 - **UI Components:** React Native Paper (Material Design)  
 - **Charts:** React Native Gifted Charts (Data visualization)  
