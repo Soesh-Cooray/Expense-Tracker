@@ -5,7 +5,7 @@ import { TextInput, Button, Text, HelperText } from 'react-native-paper';
 
 const RegisterScreen = () => {
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [secureText, setSecureText] = useState(true);
@@ -16,7 +16,7 @@ const RegisterScreen = () => {
       return;
     }
     // This will connect to your Node.js Registration API [cite: 34]
-    console.log("Registering:", name, email);
+    console.log("Registering:", name, username);
   };
 
   return (
@@ -48,11 +48,11 @@ const RegisterScreen = () => {
 
           <TextInput
             label="Email"
-            value={email}
-            onChangeText={text => setEmail(text)}
+            value={username}
+            onChangeText={text => setUsername(text)}
             mode="outlined"
-            keyboardType="email-address"
             autoCapitalize="none"
+            keyboardType="email-address"
             style={styles.input}
             left={<TextInput.Icon icon="email" />}
           />

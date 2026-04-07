@@ -5,18 +5,18 @@ import { useRouter } from 'expo-router';
 
 const LoginScreen = () => {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [secureText, setSecureText] = useState(true);
 
   // Simple validation check for the UI
-  const hasEmailError = () => {
-    return email.length > 0 && !email.includes('@');
+  const hasUsernameError = () => {
+    return username.length > 0 && !username.includes('@');
   };
 
   const handleLogin = () => {
     // Logic to connect to your Node.js + Express backend goes here
-    console.log("Logging in with:", email, password);
+    console.log("Logging in with:", username, password);
   };
 
   return (
@@ -39,16 +39,16 @@ const LoginScreen = () => {
         <View style={styles.form}>
           <TextInput
             label="Email"
-            value={email}
-            onChangeText={text => setEmail(text)}
+            value={username}
+            onChangeText={text => setUsername(text)}
             mode="outlined"
             keyboardType="email-address"
             autoCapitalize="none"
             style={styles.input}
             left={<TextInput.Icon icon="email" />}
           />
-          <HelperText type="error" visible={hasEmailError()}>
-            Email address is invalid!
+          <HelperText type="error" visible={hasUsernameError()}>
+            Invalid email address
           </HelperText>
 
           <TextInput
