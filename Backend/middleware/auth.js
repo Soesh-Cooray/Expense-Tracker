@@ -1,5 +1,7 @@
 const jwt = require('jsonwebtoken');
 
+const JWT_SECRET = process.env.JWT_SECRET || 'YOUR_SECRET_KEY';
+
 const auth = (req, res, next) => {
     // 1. Get the token from the header (standard for mobile API integration) [cite: 28, 61]
     const token = req.header('x-auth-token');
@@ -12,7 +14,7 @@ const auth = (req, res, next) => {
     try {
         // 3. Verify the token
         // IMPORTANT: Replace 'YOUR_SECRET_KEY' with process.env.JWT_SECRET in production [cite: 160, 165]
-        const decoded = jwt.verify(token, 'YOUR_SECRET_KEY');
+        const decoded = jwt.verify(token, JWT_SECRET);
 
         // 4. Align with your routes: your login route uses { id: user._id }
         // We attach the decoded object to req.user so your CRUD routes can access req.user.id
