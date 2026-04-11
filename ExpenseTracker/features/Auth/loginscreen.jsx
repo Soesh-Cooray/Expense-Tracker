@@ -1,22 +1,65 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Image, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import useAuthStore from '../../store/Authstore';
+import { View, StyleSheet, Image, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
 import { TextInput, Button, Text, HelperText } from 'react-native-paper';
 import { useRouter } from 'expo-router';
+
+
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
 const LoginScreen = () => {
   const router = useRouter();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [secureText, setSecureText] = useState(true);
+  const login = useAuthStore((state) => state.login);
 
   // Simple validation check for the UI
   const hasUsernameError = () => {
     return username.length > 0 && !username.includes('@');
   };
 
-  const handleLogin = () => {
-    // Logic to connect to your Node.js + Express backend goes here
-    console.log("Logging in with:", username, password);
+  const handleLogin = async () => {
+    if (!username.trim() || !password) {
+      Alert.alert('Error', 'Please enter email and password');
+      return;
+    }
+
+    if (hasUsernameError()) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return;
+    }
+
+    if (!API_BASE_URL) {
+      Alert.alert('Configuration error', 'API base URL is missing. Check your .env file.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: username.trim().toLowerCase(),
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        Alert.alert('Login failed', data.message || data.error || 'Please try again');
+        return;
+      }
+
+      await login(data.user, data.token);
+      Alert.alert('Success', 'Login successful');
+      router.push('/dashboard');
+    } catch (error) {
+      Alert.alert('Network error', 'Could not reach the server');
+    }
   };
 
   return (

@@ -1,7 +1,9 @@
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { View, StyleSheet, Image, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { TextInput, Button, Text, HelperText } from 'react-native-paper';
+import { View, StyleSheet, Image, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
+import { TextInput, Button, Text } from 'react-native-paper';
+
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
 const RegisterScreen = () => {
   const [name, setName] = useState('');
@@ -10,13 +12,47 @@ const RegisterScreen = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [secureText, setSecureText] = useState(true);
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (password !== confirmPassword) {
-      alert("Passwords do not match!");
+      Alert.alert('Error', 'Passwords do not match!');
       return;
     }
-    // This will connect to your Node.js Registration API [cite: 34]
-    console.log("Registering:", name, username);
+
+    if (!name.trim() || !username.trim() || !password) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    if (!API_BASE_URL) {
+      Alert.alert('Configuration error', 'API base URL is missing. Check your .env file.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: name.trim(),
+          username: username.trim().toLowerCase(),
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        Alert.alert('Registration failed', data.message || data.error || 'Please try again');
+        return;
+      }
+
+      Alert.alert('Success', 'Account created successfully');
+      router.push('/login');
+    } catch (error) {
+      Alert.alert('Network error', 'Could not reach the server');
+    }
   };
 
   return (
