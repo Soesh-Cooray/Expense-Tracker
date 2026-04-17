@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   container: { flex: 1, backgroundColor: '#f5f5f5', padding: 15 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 20 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 20 ,marginTop: 50  },
   welcomeText: { fontSize: 16, color: '#666' },
   nameText: { fontSize: 24, fontWeight: 'bold' },
   summaryCard: { backgroundColor: '#6200ee', borderRadius: 15, elevation: 4 },
