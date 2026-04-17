@@ -66,6 +66,9 @@ function RootLayoutNav() {
           <Stack.Screen name="intro" options={{ headerShown: false }} />
           <Stack.Screen name="login" options={{ headerShown: false }} />
           <Stack.Screen name="register" options={{ headerShown: false }} />
+          <Stack.Screen name="resetpassword" options={{ headerShown: false }} />
+          <Stack.Screen name="resetpasswordotp" options={{ headerShown: false }} />
+          <Stack.Screen name="resetpasswordconfirm" options={{ headerShown: false }} />
           <Stack.Screen name="dashboard" options={{ headerShown: false }} />
           <Stack.Screen name="savingsGoal" options={{ headerShown: false }} />
         </Stack>

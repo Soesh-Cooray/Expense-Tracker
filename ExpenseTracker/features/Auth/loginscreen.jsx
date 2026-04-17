@@ -120,6 +120,15 @@ const LoginScreen = () => {
             Login
           </Button>
 
+          <Button
+            mode="text"
+            onPress={() => router.push('/resetpassword')}
+            style={styles.linkButton}
+            textColor='#1a73eb'
+          >
+            Forgot Password?
+          </Button>
+
           <Button mode="text" onPress={() => router.push('/register')} style={styles.flatButton} textColor='#000000'>
             Don't have an account? Sign Up
           </Button>
@@ -175,6 +184,9 @@ const styles = StyleSheet.create({
   },
   flatButton: {
     marginTop: 15,
+  },
+  linkButton: {
+    marginTop: 10,
   },
 });
 
