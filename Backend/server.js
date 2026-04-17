@@ -3,10 +3,10 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 
+dotenv.config();
+
 const usersRouter = require('./routes/usersRouter');
 const savingsGoalRouter = require('./routes/savingsGoalRouter');
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
