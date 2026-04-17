@@ -73,10 +73,26 @@ router.delete('/delete/:id', authMiddleware, async (req, res) => {
 }); 
 
 //savings transactions routes
+
+router.get('/transactions/all', authMiddleware, async (req, res) => {
+    try {
+        // Finds all transactions where userId matches the authenticated user [cite: 32, 39]
+        const transactions = await SavingsTransaction.find({ userId: req.user.id }).populate('savingsGoalId', 'goalName')
+            .sort({ transactionDate: -1 }); // Optional: Sort by newest first
+
+        res.json({ 
+            count: transactions.length,
+            transactions 
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 router.get('/:id/transactions', authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
-        const transactions = await SavingsTransaction.find({ savingsGoalId: id, userId: req.user.id });
+        const transactions = await SavingsTransaction.find({ savingsGoalId: id, userId: req.user.id }).populate('savingsGoalId', 'goalName');
         res.json({ transactions });
     } catch (error) {
         res.status(500).json({ error: error.message });

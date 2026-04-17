@@ -1,13 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, Dimensions } from 'react-native';
 import { Text, Card, Title, Paragraph, Button, Avatar, IconButton } from 'react-native-paper';
 import { PieChart } from "react-native-gifted-charts";
+import { useNavigation } from 'expo-router';
 import useAuthStore from '../store/Authstore';
+import Sidebar from '../components/Sidebar';
 
-const DashboardScreen = ({ navigation }) => {
+const DashboardScreen = () => {
+  const navigation = useNavigation();
   const user = useAuthStore((state) => state.user);
   const userName = user?.name || "User"; 
   const totalBalance = "LKR 45,000";
+  const [activeRoute] = useState('dashboard');
   
   // Data for the Savings Progress chart
   const pieData = [
@@ -16,7 +20,9 @@ const DashboardScreen = ({ navigation }) => {
   ];
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.wrapper}>
+      <Sidebar navigation={navigation} activeRoute={activeRoute} />
+      <ScrollView style={styles.container}>
       {/* Header Section */}
       <View style={styles.header}>
         <View>
@@ -79,11 +85,17 @@ const DashboardScreen = ({ navigation }) => {
            Add Transaction
          </Button>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  wrapper: { 
+    flex: 1, 
+    flexDirection: 'row',
+    backgroundColor: '#f5f5f5',
+  },
   container: { flex: 1, backgroundColor: '#f5f5f5', padding: 15 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 20 },
   welcomeText: { fontSize: 16, color: '#666' },
