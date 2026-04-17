@@ -170,6 +170,30 @@ const SavingsDashboard = () => {
     setEditGoalDialogVisible(true);
   };
 
+  const handleDeleteGoal = (goalId) => {
+    Alert.alert('Delete goal', 'Are you sure you want to delete this goal?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          if (!goalId) return;
+          try {
+            setSubmitting(true);
+            await axios.delete(`${API_BASE_URL}/savings-goals/delete/${goalId}`, {
+              headers: authHeaders,
+            });
+            await fetchData();
+          } catch (err) {
+            Alert.alert('Delete goal failed', err?.response?.data?.message || err.message || 'Try again');
+          } finally {
+            setSubmitting(false);
+          }
+        },
+      },
+    ]);
+  };
+
   const handleEditGoalDateChange = (_event, selectedDate) => {
     if (Platform.OS === 'android') {
       setShowEditGoalDatePicker(false);
@@ -307,7 +331,6 @@ const SavingsDashboard = () => {
         <Text variant="headlineMedium">Savings Goals</Text>
       </View>
 
-      {/* Summary Cards mirroring your web UI */}
       <View style={styles.row}>
         <Card style={styles.miniCard}>
           <Card.Content>
@@ -323,7 +346,6 @@ const SavingsDashboard = () => {
         </Card>
       </View>
 
-      {/* Goal Progress Section */}
       <Text variant="titleMedium" style={styles.sectionTitle}>Progress by Goal</Text>
       {goals.map((goal) => (
         <Card key={goal._id} style={styles.goalCard}>
@@ -340,6 +362,13 @@ const SavingsDashboard = () => {
                   iconColor="#6B7280"
                   style={styles.goalEditIcon}
                   onPress={() => handleEditGoal(goal)}
+                />
+                <IconButton
+                  icon="delete"
+                  size={18}
+                  iconColor="#D32F2F"
+                  style={styles.goalDeleteIcon}
+                  onPress={() => handleDeleteGoal(goal._id)}
                 />
               </View>
             </View>
@@ -360,8 +389,14 @@ const SavingsDashboard = () => {
         <Button mode="outlined" onPress={() => setSavingsDialogVisible(true)} icon="cash-plus">+Savings</Button>
       </View>
 
-      {transactions.slice(0, 5).map((item) => (
-        <Card key={item._id} style={styles.transactionCard}>
+      {transactions.slice(0, 5).map((item, index, arr) => (
+        <Card
+          key={item._id}
+          style={[
+            styles.transactionCard,
+            index === arr.length - 1 && styles.lastTransactionCard,
+          ]}
+        >
           <Card.Content>
             <View style={styles.transactionTopRow}>
               <Text style={styles.transactionGoalName}>{item.savingsGoalId?.goalName || 'Goal'}</Text>
@@ -379,13 +414,13 @@ const SavingsDashboard = () => {
             <View style={styles.transactionActionsRow}>
               <IconButton
                 icon="pencil"
-                size={22}
+                size={20}
                 iconColor="#6B7280"
                 onPress={() => handleEditTransaction(item)}
               />
               <IconButton
                 icon="delete"
-                size={22}
+                size={20}
                 iconColor="#D32F2F"
                 onPress={() => handleDeleteTransaction(item._id)}
               />
@@ -611,7 +646,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     justifyContent: 'space-between', 
     alignItems: 'center', 
-    marginTop: 20,
+    marginTop: 60,
     marginBottom: 20 
 },
 
@@ -633,6 +668,10 @@ const styles = StyleSheet.create({
   goalEditIcon: {
     margin: 0,
     marginLeft: 4,
+  },
+  goalDeleteIcon: {
+    margin: 0,
+    marginLeft: 2,
   },
   progressBar: { height: 8, borderRadius: 4, marginBottom: 4 },
   dialogInput: {
@@ -662,6 +701,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 16,
   },
+  lastTransactionCard: {
+    marginBottom: 150,
+  },
   transactionTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -669,12 +711,12 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   transactionGoalName: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '700',
     color: '#111827',
   },
   transactionAmount: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '700',
     color: '#2E7D32',
   },
@@ -700,11 +742,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   transactionDate: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#6B7280',
   },
   transactionActionsRow: {
-    marginTop: 12,
     flexDirection: 'row',
     justifyContent: 'flex-end',
     alignItems: 'center',
