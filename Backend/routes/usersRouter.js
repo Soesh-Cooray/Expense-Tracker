@@ -4,9 +4,29 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken'); 
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const multer = require('multer');
+const cloudinary = require('cloudinary').v2;
 const User = require('../models/users');
+const authMiddleware = require('../middleware/auth');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'YOUR_SECRET_KEY';
+
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        if (!file.mimetype || !file.mimetype.startsWith('image/')) {
+            return cb(new Error('Only image files are allowed'));
+        }
+        cb(null, true);
+    },
+});
 
 const getSmtpConfig = () => {
     const host = process.env.SMTP_HOST || process.env.MAIL_HOST;
@@ -15,17 +35,6 @@ const getSmtpConfig = () => {
     const pass = process.env.SMTP_PASS || process.env.MAIL_PASS;
 
     return { host, port, user, pass };
-};
-
-const getMissingSmtpVars = () => {
-    const { host, user, pass } = getSmtpConfig();
-    const missing = [];
-
-    if (!host) missing.push('SMTP_HOST');
-    if (!user) missing.push('SMTP_USER');
-    if (!pass) missing.push('SMTP_PASS');
-
-    return missing;
 };
 
 const createMailer = () => {
@@ -167,6 +176,119 @@ router.post('/reset-password/confirm', async (req, res) => {
         await user.save();
 
         res.json({ message: 'Password reset successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.put('/change-profile-picture', authMiddleware, upload.single('image'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'Profile image file is required' });
+        }
+
+        if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+            return res.status(500).json({ message: 'Cloudinary is not configured on the server' });
+        }
+
+        const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+
+        const uploadedImage = await cloudinary.uploader.upload(base64Image, {
+            folder: 'profile-pictures',
+            resource_type: 'image',
+            public_id: `user-${req.user.id}-${Date.now()}`,
+        });
+
+        const user = await User.findByIdAndUpdate(
+            req.user.id,
+            { imageUrl: uploadedImage.secure_url },
+            { new: true }
+        );
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.json({
+            message: 'Profile picture updated successfully',
+            imageUrl: user.imageUrl,
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.put('/update-profile', authMiddleware, async (req, res) => {
+    try {
+        const { name, email } = req.body;
+
+        if (!name && !email) {
+            return res.status(400).json({ message: 'At least one field (name or email) is required' });
+        }
+
+        const updateData = {};
+
+        if (name) {
+            updateData.name = String(name).trim();
+        }
+
+        if (email) {
+            const normalizedEmail = String(email).trim().toLowerCase();
+            const existingUser = await User.findOne({ username: normalizedEmail, _id: { $ne: req.user.id } });
+
+            if (existingUser) {
+                return res.status(400).json({ message: 'Email is already in use' });
+            }
+
+            updateData.username = normalizedEmail;
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(req.user.id, updateData, {
+            new: true,
+            runValidators: true,
+        }).select('-password -resetPasswordOtp -resetPasswordOtpExpires');
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.json({
+            message: 'Profile updated successfully',
+            user: updatedUser,
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.put('/change-password', authMiddleware, async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ message: 'Current password and new password are required' });
+        }
+
+        if (String(newPassword).length < 6) {
+            return res.status(400).json({ message: 'New password must be at least 6 characters long' });
+        }
+
+        const user = await User.findById(req.user.id);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+        if (!isCurrentPasswordValid) {
+            return res.status(400).json({ message: 'Current password is incorrect' });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(newPassword, salt);
+        await user.save();
+
+        res.json({ message: 'Password changed successfully' });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

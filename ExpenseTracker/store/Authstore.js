@@ -12,6 +12,10 @@ const useAuthStore = create((set) => ({
     set({ user: userData, token: token });
   },
 
+  updateUser: (userData) => set((state) => ({
+    user: state.user ? { ...state.user, ...userData } : userData,
+  })),
+
   // Action to clear state on logout
   logout: async () => {
     await SecureStore.deleteItemAsync('userToken');

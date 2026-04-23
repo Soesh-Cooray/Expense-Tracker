@@ -58,7 +58,7 @@ const LoginScreen = () => {
       Alert.alert('Success', 'Login successful');
       router.push('/dashboard');
     } catch (error) {
-      Alert.alert('Network error', 'Could not reach the server');
+      Alert.alert('Network error', error?.message || 'Could not reach the server');
     }
   };
 

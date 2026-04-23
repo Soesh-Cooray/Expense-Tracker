@@ -6,7 +6,8 @@ const userSchema = new mongoose.Schema({
     password: { type: String, required: true },
     isVerified: { type: Boolean, default: false},
     resetPasswordOtp: { type: String },
-    resetPasswordOtpExpires: { type: Date }
+    resetPasswordOtpExpires: { type: Date },
+    imageUrl:{type:String}
 }, {
     timestamps: true
 });

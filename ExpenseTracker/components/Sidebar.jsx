@@ -18,7 +18,7 @@ const Sidebar = ({ navigation, activeRoute }) => {
     { label: 'Income', icon: 'plus-circle', route: 'income', iconLibrary: 'mci' },
     { label: 'Budgets', icon: 'pie-chart', route: 'budgets', iconLibrary: 'antdesign' },
     { label: 'Goals', icon: 'piggy-bank', route: 'savingsGoal', iconLibrary: 'mci' },
-    { label: 'Subscriptions', icon: 'mdi-credit-card', route: 'subscriptions', iconLibrary: 'mci' },
+    { label: 'Subscriptions', icon: 'credit-card', route: 'subscriptions', iconLibrary: 'mci' },
     { label: 'Settings', icon: 'cog', route: 'settings', iconLibrary: 'mci' },
   ];
 
