@@ -10,6 +10,8 @@ const DashboardScreen = () => {
   const navigation = useNavigation();
   const user = useAuthStore((state) => state.user);
   const userName = user?.name || "User"; 
+  const userImageUrl = user?.imageUrl || '';
+  const userInitial = userName.charAt(0).toUpperCase();
   const totalBalance = "LKR 45,000";
   const [activeRoute] = useState('dashboard');
   
@@ -29,7 +31,11 @@ const DashboardScreen = () => {
           <Text style={styles.welcomeText}>Hello,</Text>
           <Title style={styles.nameText}>{userName} 👋</Title>
         </View>
-        <Avatar.Image size={50} source={{ uri: 'https://via.placeholder.com/50' }} />
+        {userImageUrl ? (
+          <Avatar.Image size={50} source={{ uri: userImageUrl }} />
+        ) : (
+          <Avatar.Text size={50} label={userInitial} />
+        )}
       </View>
 
       {/* Summary Card */}

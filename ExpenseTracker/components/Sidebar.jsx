@@ -11,6 +11,7 @@ const Sidebar = ({ navigation, activeRoute }) => {
   const userName = user?.name || "User";
   const userEmail = user?.email || "user@example.com";
   const userInitial = userName.charAt(0).toUpperCase();
+  const userImageUrl = user?.imageUrl || '';
 
   const menuItems = [
     { label: 'Dashboard', icon: 'view-dashboard', route: 'dashboard', iconLibrary: 'mci' },
@@ -64,11 +65,19 @@ const Sidebar = ({ navigation, activeRoute }) => {
       <View style={styles.accountSection}>
         <Divider />
         <View style={styles.accountContainer}>
-          <Avatar.Text
-            size={40}
-            label={userInitial}
-            style={styles.avatar}
-          />
+          {userImageUrl ? (
+            <Avatar.Image
+              size={40}
+              source={{ uri: userImageUrl }}
+              style={styles.avatar}
+            />
+          ) : (
+            <Avatar.Text
+              size={40}
+              label={userInitial}
+              style={styles.avatar}
+            />
+          )}
         </View>
         <IconButton
           icon="logout"

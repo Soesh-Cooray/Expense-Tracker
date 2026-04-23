@@ -89,7 +89,7 @@ router.post('/login', async (req, res) => {
         res.json({ 
             message: 'Login successful', 
             token, // Mobile app needs this for protected routes
-            user: { id: user._id, username: user.username, name: user.name } 
+            user: { id: user._id, username: user.username, name: user.name, imageUrl: user.imageUrl } 
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
