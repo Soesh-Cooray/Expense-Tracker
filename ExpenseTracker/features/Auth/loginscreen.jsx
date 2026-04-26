@@ -6,6 +6,30 @@ import { useRouter } from 'expo-router';
 
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+const NORMALIZED_API_BASE_URL = API_BASE_URL ? API_BASE_URL.replace(/\/+$/, '') : '';
+
+const parseApiResponse = async (response) => {
+  const rawText = await response.text();
+  const contentType = response.headers.get('content-type') || '';
+
+  if (!rawText) {
+    return {};
+  }
+
+  if (contentType.includes('application/json')) {
+    return JSON.parse(rawText);
+  }
+
+  try {
+    return JSON.parse(rawText);
+  } catch {
+    if (rawText.trim().startsWith('<')) {
+      return { message: 'Server returned HTML instead of JSON. Check EXPO_PUBLIC_API_BASE_URL and backend route.' };
+    }
+
+    return { message: rawText };
+  }
+};
 
 const LoginScreen = () => {
   const router = useRouter();
@@ -36,7 +60,7 @@ const LoginScreen = () => {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/users/login`, {
+      const response = await fetch(`${NORMALIZED_API_BASE_URL}/users/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -47,10 +71,23 @@ const LoginScreen = () => {
         }),
       });
 
-      const data = await response.json();
+      const data = await parseApiResponse(response);
 
       if (!response.ok) {
-        Alert.alert('Login failed', data.message || data.error || 'Please try again');
+        const fallbackMessage = response.status >= 500
+          ? 'Server error. Please check backend logs and try again.'
+          : 'Please try again';
+
+        const message = typeof data?.message === 'string' && data.message.trim()
+          ? data.message
+          : (typeof data?.error === 'string' && data.error.trim() ? data.error : fallbackMessage);
+
+        Alert.alert('Login failed', message);
+        return;
+      }
+
+      if (!data?.token || !data?.user) {
+        Alert.alert('Login failed', 'Unexpected server response. Verify backend API URL and route.');
         return;
       }
 
