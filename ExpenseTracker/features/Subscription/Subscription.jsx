@@ -256,12 +256,8 @@ const SubscriptionScreen = () => {
 				<View style={styles.headerRow}>
 					<View>
 						<Text style={styles.title}>Subscriptions</Text>
-						<Text style={styles.subtitle}>Track recurring services with the same clean dashboard style.</Text>
+						<Text style={styles.subtitle}>Track recurring services.</Text>
 					</View>
-
-					<Button mode="contained" icon="plus" onPress={openCreateDialog} style={styles.primaryButton} contentStyle={styles.primaryButtonContent}>
-						Add Subscription
-					</Button>
 				</View>
 
 				<Button
@@ -444,6 +440,7 @@ const styles = StyleSheet.create({
 		marginTop: 10,
 	},
 	title: {
+		marginTop: 16,	
 		fontSize: 28,
 		fontWeight: 'bold',
 		color: '#111827',
