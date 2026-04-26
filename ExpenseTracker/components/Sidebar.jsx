@@ -15,7 +15,7 @@ const Sidebar = ({ navigation, activeRoute }) => {
 
   const menuItems = [
     { label: 'Dashboard', icon: 'view-dashboard', route: 'dashboard', iconLibrary: 'mci' },
-    { label: 'Expenses', icon: 'minus-circle', route: 'expenses', iconLibrary: 'mci' },
+    { label: 'Expenses', icon: 'minus-circle', route: 'expense', iconLibrary: 'mci' },
     { label: 'Income', icon: 'plus-circle', route: 'income', iconLibrary: 'mci' },
     { label: 'Budgets', icon: 'pie-chart', route: 'budgets', iconLibrary: 'antdesign' },
     { label: 'Goals', icon: 'piggy-bank', route: 'savingsGoal', iconLibrary: 'mci' },
