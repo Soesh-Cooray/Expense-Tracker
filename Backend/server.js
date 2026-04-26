@@ -8,6 +8,7 @@ dotenv.config();
 const usersRouter = require('./routes/usersRouter');
 const savingsGoalRouter = require('./routes/savingsGoalRouter');
 const subscriptionRouter = require('./routes/subscriptionRouter');
+const expensesRouter = require('./routes/expensesRouter');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -27,6 +28,7 @@ app.get('/health', (req, res) => {
 app.use('/api/users', usersRouter);
 app.use('/api/savings-goals', savingsGoalRouter);
 app.use('/api/subscriptions', subscriptionRouter);
+app.use('/api/expenses', expensesRouter);
 
 const startServer = async () => {
 	try {
@@ -39,7 +41,6 @@ const startServer = async () => {
 
 		const server = app.listen(PORT, '0.0.0.0', () => {
 			console.log(`Server is running on http://localhost:${PORT}`);
-			console.log(`Listening on all interfaces (0.0.0.0:${PORT})`);
 		});
 
 		server.on('error', (err) => {
