@@ -8,10 +8,10 @@ import useAuthStore from '../store/Authstore';
 const Sidebar = ({ navigation, activeRoute }) => {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
-  const userName = user?.name || "User";
-  const userEmail = user?.email || "user@example.com";
+  const userName = user?.name || user?.username || user?.email || "User";
+  const userEmail = user?.email || user?.username || "user@example.com";
   const userInitial = userName.charAt(0).toUpperCase();
-  const userImageUrl = user?.imageUrl || '';
+  const userImageUrl = user?.imageUrl || user?.profilePicture || user?.avatar || '';
 
   const menuItems = [
     { label: 'Dashboard', icon: 'view-dashboard', route: 'dashboard', iconLibrary: 'mci' },

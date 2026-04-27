@@ -6,6 +6,7 @@ import { ActivityIndicator, Button, Card, Dialog, IconButton, Menu, Portal, Text
 import { useNavigation } from 'expo-router';
 import Sidebar from '../../components/Sidebar';
 import useAuthStore from '../../store/Authstore';
+import useFinanceStore from '../../store/financeStore';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
@@ -32,6 +33,7 @@ const formatCurrency = (value) => `Rs.${Number(value || 0).toFixed(2)}`;
 const ExpenseScreen = () => {
 	const navigation = useNavigation();
 	const token = useAuthStore((state) => state.token);
+	const setExpenseMetrics = useFinanceStore((state) => state.setExpenseMetrics);
 	const authHeaders = token ? { 'x-auth-token': token } : {};
 
 	const [activeRoute] = useState('expense');
@@ -77,6 +79,10 @@ const ExpenseScreen = () => {
 			categories,
 		};
 	}, [expenses]);
+
+	useEffect(() => {
+		setExpenseMetrics(summary);
+	}, [summary, setExpenseMetrics]);
 
 	const resetForm = () => {
 		setExpenseForm(emptyExpenseForm);

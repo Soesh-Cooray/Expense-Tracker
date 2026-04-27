@@ -6,12 +6,14 @@ import axios from 'axios';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Sidebar from '../../components/Sidebar';
 import useAuthStore from '../../store/Authstore';
+import useFinanceStore from '../../store/financeStore';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
 const SavingsDashboard = () => {
   const navigation = useNavigation();
   const token = useAuthStore((state) => state.token);
+  const setSavingsMetrics = useFinanceStore((state) => state.setSavingsMetrics);
   const [goals, setGoals] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -73,6 +75,15 @@ const SavingsDashboard = () => {
   const totalSaved = goals.reduce((acc, curr) => acc + curr.savedAmount, 0);
   const totalTarget = goals.reduce((acc, curr) => acc + curr.targetAmount, 0);
   const progressPercent = totalTarget > 0 ? (totalSaved / totalTarget) * 100 : 0;
+
+  useEffect(() => {
+    setSavingsMetrics({
+      totalSaved,
+      totalTarget,
+      progressPercent,
+      goalsCount: goals.length,
+    });
+  }, [totalSaved, totalTarget, progressPercent, goals.length, setSavingsMetrics]);
 
   const formatDate = (value) => {
     if (!value) return '-';

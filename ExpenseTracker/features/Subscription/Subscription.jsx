@@ -6,6 +6,7 @@ import { Button, Card, Dialog, IconButton, Portal, ProgressBar, Text, TextInput 
 import { useNavigation } from 'expo-router';
 import Sidebar from '../../components/Sidebar';
 import useAuthStore from '../../store/Authstore';
+import useFinanceStore from '../../store/financeStore';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
@@ -43,6 +44,7 @@ const getMonthlyEquivalent = (subscription) => {
 const SubscriptionScreen = () => {
 	const navigation = useNavigation();
 	const token = useAuthStore((state) => state.token);
+	const setSubscriptionMetrics = useFinanceStore((state) => state.setSubscriptionMetrics);
 	const authHeaders = token ? { 'x-auth-token': token } : {};
 
 	const [subscriptions, setSubscriptions] = useState([]);
@@ -89,6 +91,10 @@ const SubscriptionScreen = () => {
 			annualTotal,
 		};
 	}, [subscriptions]);
+
+	useEffect(() => {
+		setSubscriptionMetrics(summary);
+	}, [summary, setSubscriptionMetrics]);
 
 	const resetForm = () => {
 		setFormState(emptyFormState);
