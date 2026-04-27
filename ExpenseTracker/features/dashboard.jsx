@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { Text, Card, Title, Paragraph, Button, Avatar, ProgressBar } from 'react-native-paper';
 import { PieChart } from 'react-native-gifted-charts';
 import { useNavigation } from 'expo-router';
@@ -17,6 +17,7 @@ const DashboardScreen = () => {
   const budget = useFinanceStore((state) => state.budget);
   const savings = useFinanceStore((state) => state.savings);
   const subscription = useFinanceStore((state) => state.subscription);
+  const isRefreshing = useFinanceStore((state) => state.isRefreshing);
   const updatedAt = useFinanceStore((state) => state.updatedAt);
   const userName = user?.name || user?.username || user?.email || "User"; 
   const userImageUrl = user?.imageUrl || user?.profilePicture || user?.avatar || '';
@@ -47,6 +48,15 @@ const DashboardScreen = () => {
     <View style={styles.wrapper}>
       <Sidebar navigation={navigation} activeRoute={activeRoute} />
       <ScrollView style={styles.container}>
+      {isRefreshing && !updatedAt ? (
+        <Card style={styles.loadingCard}>
+          <Card.Content style={styles.loadingContent}>
+            <ActivityIndicator color="#1a73eb" />
+            <Text style={styles.loadingText}>Syncing dashboard data...</Text>
+          </Card.Content>
+        </Card>
+      ) : null}
+
       {/* Header Section */}
       <View style={styles.header}>
         <View>
@@ -203,6 +213,9 @@ const styles = StyleSheet.create({
   sectionTitle: { marginTop: 25, marginBottom: 10, fontSize: 18 },
   chartCard: { borderRadius: 15, marginBottom: 20 },
   chartContent: { flexDirection: 'column', alignItems: 'center', justifyContent: 'center' },
+  loadingCard: { borderRadius: 14, marginTop: 8, marginBottom: 8 },
+  loadingContent: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  loadingText: { color: '#374151', fontSize: 13, fontWeight: '600' },
   chartLegend: { marginTop: 14, width: '100%' },
   legendItem: { color: '#374151', fontSize: 14, marginBottom: 6 },
   statusCard: { borderRadius: 15, marginBottom: 8 },

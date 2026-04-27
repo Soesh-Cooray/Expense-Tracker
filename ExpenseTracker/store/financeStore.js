@@ -1,7 +1,9 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
+import axios from 'axios';
 
 const FINANCE_METRICS_KEY = 'financeMetrics';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
 const initialState = {
   expense: {
@@ -31,6 +33,7 @@ const initialState = {
     monthlyTotal: 0,
     annualTotal: 0,
   },
+  isRefreshing: false,
   updatedAt: null,
 };
 
@@ -41,10 +44,15 @@ const persistMetrics = async (snapshot) => {
     budget: snapshot.budget,
     savings: snapshot.savings,
     subscription: snapshot.subscription,
+    isRefreshing: snapshot.isRefreshing,
     updatedAt: snapshot.updatedAt,
   };
 
   await SecureStore.setItemAsync(FINANCE_METRICS_KEY, JSON.stringify(payload));
+};
+
+const calculateCategoriesCount = (items, keyName = 'category') => {
+  return new Set(items.map((item) => (item?.[keyName] || '').trim()).filter(Boolean)).size;
 };
 
 const useFinanceStore = create((set, get) => ({
@@ -62,6 +70,88 @@ const useFinanceStore = create((set, get) => ({
       }));
     } catch {
       set(() => ({ ...initialState }));
+    }
+  },
+
+  refreshFinanceMetrics: async (token) => {
+    if (!API_BASE_URL || !token) {
+      return;
+    }
+
+    const headers = { 'x-auth-token': token };
+
+    set(() => ({ isRefreshing: true }));
+
+    try {
+      const [expenseRes, incomeRes, budgetRes, savingsGoalRes, subscriptionRes] = await Promise.all([
+        axios.get(`${API_BASE_URL}/expenses`, { headers }),
+        axios.get(`${API_BASE_URL}/income`, { headers }),
+        axios.get(`${API_BASE_URL}/budgets`, { headers }),
+        axios.get(`${API_BASE_URL}/savings-goals`, { headers }),
+        axios.get(`${API_BASE_URL}/subscriptions`, { headers }),
+      ]);
+
+      const expenses = Array.isArray(expenseRes.data) ? expenseRes.data : [];
+      const incomes = Array.isArray(incomeRes.data) ? incomeRes.data : [];
+      const budgets = Array.isArray(budgetRes.data) ? budgetRes.data : [];
+      const savingsGoals = Array.isArray(savingsGoalRes.data?.savingsGoals) ? savingsGoalRes.data.savingsGoals : [];
+      const subscriptions = Array.isArray(subscriptionRes.data) ? subscriptionRes.data : [];
+
+      const expenseTotal = expenses.reduce((acc, expense) => acc + Number(expense?.amount || 0), 0);
+      const incomeTotal = incomes.reduce((acc, income) => acc + Number(income?.amount || 0), 0);
+      const budgetTotalBudgeted = budgets.reduce((acc, budget) => acc + Number(budget?.amount || 0), 0);
+      const budgetTotalSpent = budgets.reduce((acc, budget) => acc + Number(budget?.spentAmount || 0), 0);
+      const savingsTotalSaved = savingsGoals.reduce((acc, goal) => acc + Number(goal?.savedAmount || 0), 0);
+      const savingsTotalTarget = savingsGoals.reduce((acc, goal) => acc + Number(goal?.targetAmount || 0), 0);
+      const subscriptionsMonthlyTotal = subscriptions.reduce((total, subscription) => {
+        const amount = Number(subscription?.amount || 0);
+
+        switch (subscription?.billingCycle) {
+          case 'weekly':
+            return total + (amount * 52) / 12;
+          case 'yearly':
+            return total + amount / 12;
+          default:
+            return total + amount;
+        }
+      }, 0);
+
+      set(() => ({
+        expense: {
+          total: expenseTotal,
+          count: expenses.length,
+          categories: calculateCategoriesCount(expenses),
+        },
+        income: {
+          total: incomeTotal,
+          count: incomes.length,
+          categories: calculateCategoriesCount(incomes),
+        },
+        budget: {
+          totalBudgeted: budgetTotalBudgeted,
+          totalSpent: budgetTotalSpent,
+          totalProgress: budgetTotalBudgeted > 0 ? Math.min(budgetTotalSpent / budgetTotalBudgeted, 1) : 0,
+          count: budgets.length,
+        },
+        savings: {
+          totalSaved: savingsTotalSaved,
+          totalTarget: savingsTotalTarget,
+          progressPercent: savingsTotalTarget > 0 ? (savingsTotalSaved / savingsTotalTarget) * 100 : 0,
+          goalsCount: savingsGoals.length,
+        },
+        subscription: {
+          activeCount: subscriptions.length,
+          monthlyTotal: subscriptionsMonthlyTotal,
+          annualTotal: subscriptionsMonthlyTotal * 12,
+        },
+        updatedAt: Date.now(),
+        isRefreshing: false,
+      }));
+
+      await persistMetrics(get());
+    } catch (error) {
+      console.error('Failed to refresh finance metrics', error?.response?.data || error.message);
+      set(() => ({ isRefreshing: false }));
     }
   },
 
