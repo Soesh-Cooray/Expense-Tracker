@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const expenseSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     title: { type: String, required: true, trim: true },
-    category: { type: String, trim: true },
+    category: { type: String, enum: ['Food', 'Transport', 'Utilities','Rent','Entertainment','Health','Other'], trim: true },
     amount: { type: Number, required: true, min: 0 },
     description: { type: String, trim: true },
     date:{type:Date, required:true},

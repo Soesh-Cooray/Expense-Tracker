@@ -1,13 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import axios from 'axios';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { ActivityIndicator, Button, Card, Dialog, IconButton, Portal, Text, TextInput } from 'react-native-paper';
+import { ActivityIndicator, Button, Card, Dialog, IconButton, Menu, Portal, Text, TextInput } from 'react-native-paper';
 import { useNavigation } from 'expo-router';
 import Sidebar from '../../components/Sidebar';
 import useAuthStore from '../../store/Authstore';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+
+const expenseCategoryOptions = ['Food', 'Transport', 'Utilities', 'Rent', 'Entertainment', 'Health', 'Other'];
 
 const emptyExpenseForm = {
 	title: '',
@@ -41,6 +43,7 @@ const ExpenseScreen = () => {
 	const [expenseForm, setExpenseForm] = useState(emptyExpenseForm);
 	const [selectedDate, setSelectedDate] = useState(null);
 	const [showDatePicker, setShowDatePicker] = useState(false);
+	const [showCategoryMenu, setShowCategoryMenu] = useState(false);
 
 	const fetchExpenses = useCallback(async () => {
 		if (!API_BASE_URL || !token) {
@@ -80,6 +83,7 @@ const ExpenseScreen = () => {
 		setEditingExpenseId('');
 		setSelectedDate(null);
 		setShowDatePicker(false);
+		setShowCategoryMenu(false);
 	};
 
 	const openCreateDialog = () => {
@@ -101,6 +105,7 @@ const ExpenseScreen = () => {
 		});
 		setSelectedDate(dateValue);
 		setShowDatePicker(false);
+		setShowCategoryMenu(false);
 		setDialogVisible(true);
 	};
 
@@ -328,14 +333,35 @@ const ExpenseScreen = () => {
 							onChangeText={(text) => setExpenseForm((current) => ({ ...current, title: text }))}
 							style={styles.dialogInput}
 						/>
-
-						<TextInput
-							label="Category"
-							mode="outlined"
-							value={expenseForm.category}
-							onChangeText={(text) => setExpenseForm((current) => ({ ...current, category: text }))}
-							style={styles.dialogInput}
-						/>
+						<Menu
+							visible={showCategoryMenu}
+							onDismiss={() => setShowCategoryMenu(false)}
+							anchor={
+								<Pressable style={styles.selectField} onPress={() => setShowCategoryMenu(true)}>
+									<Text style={styles.selectFieldLabel}>Category</Text>
+									<View style={styles.selectFieldRow}>
+										<Text style={expenseForm.category ? styles.selectFieldValue : styles.selectFieldPlaceholder}>
+											{expenseForm.category || 'Select category'}
+										</Text>
+										<Text style={styles.selectFieldIcon}>⌄</Text>
+									</View>
+								</Pressable>
+							}
+						>
+							{expenseCategoryOptions.map((option) => (
+								<Menu.Item
+									key={option}
+									title={option}
+									titleStyle={expenseForm.category === option ? styles.selectedMenuItemText : styles.menuItemText}
+									style={expenseForm.category === option ? styles.selectedMenuItem : null}
+									leadingIcon={expenseForm.category === option ? 'check' : undefined}
+									onPress={() => {
+										setExpenseForm((current) => ({ ...current, category: option }));
+										setShowCategoryMenu(false);
+									}}
+								/>
+							))}
+						</Menu>
 
 						<TextInput
 							label="Amount"
@@ -555,6 +581,55 @@ const styles = StyleSheet.create({
 	},
 	dialogInput: {
 		marginBottom: 10,
+	},
+	hiddenCategoryInput: {
+		height: 0,
+		marginBottom: 0,
+		padding: 0,
+		opacity: 0,
+	},
+	selectField: {
+		borderWidth: 1,
+		borderColor: '#d1d5db',
+		borderRadius: 12,
+		paddingHorizontal: 14,
+		paddingVertical: 12,
+		backgroundColor: '#ffffff',
+		marginBottom: 10,
+	},
+	selectFieldLabel: {
+		fontSize: 12,
+		color: '#6B7280',
+		marginBottom: 4,
+	},
+	selectFieldRow: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+	},
+	selectFieldValue: {
+		fontSize: 16,
+		fontWeight: '700',
+		color: '#111827',
+	},
+	selectFieldPlaceholder: {
+		fontSize: 16,
+		color: '#9ca3af',
+	},
+	selectFieldIcon: {
+		fontSize: 18,
+		color: '#6B7280',
+		marginLeft: 12,
+	},
+	selectedMenuItem: {
+		backgroundColor: '#eaf1fe',
+	},
+	selectedMenuItemText: {
+		color: '#1a73eb',
+		fontWeight: '700',
+	},
+	menuItemText: {
+		color: '#111827',
 	},
 	dateButton: {
 		marginTop: 4,
