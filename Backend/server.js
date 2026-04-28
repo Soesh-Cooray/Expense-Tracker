@@ -10,6 +10,7 @@ const savingsGoalRouter = require('./routes/savingsGoalRouter');
 const subscriptionRouter = require('./routes/subscriptionRouter');
 const expensesRouter = require('./routes/expensesRouter');
 const incomeRouter = require('./routes/incomeRouter');
+const budgetRouter = require('./routes/budgetRouter');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -31,6 +32,7 @@ app.use('/api/savings-goals', savingsGoalRouter);
 app.use('/api/subscriptions', subscriptionRouter);
 app.use('/api/expenses', expensesRouter);
 app.use('/api/income', incomeRouter);
+app.use('/api/budgets', budgetRouter);
 
 const startServer = async () => {
 	try {
