@@ -2,11 +2,13 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { MD3LightTheme, Provider as PaperProvider } from 'react-native-paper';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '../components/useColorScheme';
+import useAuthStore from '../store/Authstore';
+import useFinanceStore from '../store/financeStore';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -25,6 +27,9 @@ export default function RootLayout() {
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 
+  const restoreToken = useAuthStore((state) => state.restoreToken);
+  const restoreFinanceMetrics = useFinanceStore((state) => state.restoreFinanceMetrics);
+
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
     if (error) throw error;
@@ -36,6 +41,11 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
+  useEffect(() => {
+    restoreToken();
+    restoreFinanceMetrics();
+  }, [restoreToken, restoreFinanceMetrics]);
+
   if (!loaded) {
     return null;
   }
@@ -45,6 +55,9 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
+  const token = useAuthStore((state) => state.token);
+  const refreshFinanceMetrics = useFinanceStore((state) => state.refreshFinanceMetrics);
+  const lastRefreshedTokenRef = useRef('');
   const paperTheme = {
     ...MD3LightTheme,
     colors: {
@@ -59,6 +72,15 @@ function RootLayoutNav() {
     },
   };
 
+  useEffect(() => {
+    if (!token || token === lastRefreshedTokenRef.current) {
+      return;
+    }
+
+    lastRefreshedTokenRef.current = token;
+    refreshFinanceMetrics(token);
+  }, [token, refreshFinanceMetrics]);
+
   return (
     <PaperProvider theme={paperTheme}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
@@ -72,6 +94,7 @@ function RootLayoutNav() {
           <Stack.Screen name="dashboard" options={{ headerShown: false }} />
           <Stack.Screen name="expense" options={{ headerShown: false }} />
           <Stack.Screen name="income" options={{ headerShown: false }} />
+          <Stack.Screen name="budgets" options={{ headerShown: false }} />
           <Stack.Screen name="savingsGoal" options={{ headerShown: false }} />
           <Stack.Screen name="subscription" options={{ headerShown: false }} />
           <Stack.Screen name="settings" options={{ headerShown: false }} />
