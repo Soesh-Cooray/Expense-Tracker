@@ -33,8 +33,10 @@ const SettingsScreen = () => {
   useEffect(() => {
     setName(user?.name || '');
     setEmail(user?.username || user?.email || '');
-    setPreviewUri(user?.imageUrl || '');
-    setSelectedImage(null);
+    // Keep local image selection intact while user state rehydrates.
+    if (!selectedImage?.uri && !selectedImage?.file) {
+      setPreviewUri(user?.imageUrl || user?.profilePicture || user?.avatar || '');
+    }
   }, [user]);
 
   const authHeaders = token ? { 'x-auth-token': token } : {};
