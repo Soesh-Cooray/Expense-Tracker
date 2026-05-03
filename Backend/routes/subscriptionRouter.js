@@ -34,7 +34,7 @@ router.put('/update/:id', authMiddleware, async (req, res) => {
         const subscription = await Subscription.findOneAndUpdate(
             { _id: id, userId },
             { name, amount, startDate, billingCycle, category },
-            { new: true }
+            { returnDocument: 'after' }
         );
         res.status(200).json(subscription);
     } catch (error) {

@@ -34,7 +34,7 @@ router.put('/update/:id', authMiddleware, async (req, res) => {
         const income = await Income.findOneAndUpdate(
             { _id: id, userId },
             { category, title, amount, description, date },
-            { new: true }
+            { returnDocument: 'after' }
         );
         if (!income) {
             return res.status(404).json({ message: 'Income not found' });

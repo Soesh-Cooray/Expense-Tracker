@@ -53,7 +53,7 @@ router.put('/update/:id', authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
         const { targetAmount, goalName, dueDate } = req.body;
-        const savingsGoal = await SavingsGoal.findOneAndUpdate({ _id: id, userId: req.user.id }, { targetAmount, goalName, dueDate }, { new: true });
+        const savingsGoal = await SavingsGoal.findOneAndUpdate({ _id: id, userId: req.user.id }, { targetAmount, goalName, dueDate }, { returnDocument: 'after' });
         if (!savingsGoal) return res.status(404).json({ message: 'Savings goal not found' });
         res.json({ message: 'Savings goal updated successfully', savingsGoal });
     } catch (error) {
@@ -125,7 +125,7 @@ router.put('/transactions/update/:id', authMiddleware, async (req, res) => {
         const transaction = await SavingsTransaction.findOneAndUpdate(
             { _id: id, userId: req.user.id },
             updateData,
-            { new: true, runValidators: true }
+            { returnDocument: 'after', runValidators: true }
         );
 
         if (!transaction) return res.status(404).json({ message: 'Transaction not found' });

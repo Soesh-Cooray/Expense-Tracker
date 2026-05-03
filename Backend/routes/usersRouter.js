@@ -229,7 +229,7 @@ router.put('/change-profile-picture', authMiddleware, upload.single('image'), as
         const user = await User.findByIdAndUpdate(
             req.user.id,
             { imageUrl: uploadedImage.secure_url },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (!user) {
@@ -271,7 +271,7 @@ router.put('/update-profile', authMiddleware, async (req, res) => {
         }
 
         const updatedUser = await User.findByIdAndUpdate(req.user.id, updateData, {
-            new: true,
+            returnDocument: 'after',
             runValidators: true,
         }).select('-password -resetPasswordOtp -resetPasswordOtpExpires');
 

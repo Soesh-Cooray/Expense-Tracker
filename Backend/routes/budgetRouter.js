@@ -111,7 +111,7 @@ router.put('/update/:id', authMiddleware, async (req, res) => {
         const budget = await Budget.findOneAndUpdate(
             { _id: id, userId },
             { amount, category, period, startDate },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (!budget) {
