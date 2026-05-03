@@ -21,7 +21,9 @@ const SettingsScreen = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedImageUri, setSelectedImageUri] = useState('');
+  const [selectedImageName, setSelectedImageName] = useState('');
+  const [selectedImageType, setSelectedImageType] = useState('image/jpeg');
   const [previewUri, setPreviewUri] = useState('');
   const [showCurrentPassword, setShowCurrentPassword] = useState(true);
   const [showNewPassword, setShowNewPassword] = useState(true);
@@ -33,13 +35,44 @@ const SettingsScreen = () => {
   useEffect(() => {
     setName(user?.name || '');
     setEmail(user?.username || user?.email || '');
-    // Keep local image selection intact while user state rehydrates.
-    if (!selectedImage?.uri && !selectedImage?.file) {
+    if (!selectedImageUri) {
       setPreviewUri(user?.imageUrl || user?.profilePicture || user?.avatar || '');
     }
-  }, [user]);
+  }, [user, selectedImageUri]);
+
+  useEffect(() => {
+    const restorePickerResult = async () => {
+      const pendingResult = await ImagePicker.getPendingResultAsync();
+
+      if (!pendingResult || pendingResult.canceled || !pendingResult.assets?.length) {
+        return;
+      }
+
+      const asset = pendingResult.assets[0];
+      setSelectedImageUri(asset.uri || '');
+      setSelectedImageName(asset.fileName || `profile-${Date.now()}.jpg`);
+      setSelectedImageType(asset.mimeType || 'image/jpeg');
+      setPreviewUri(asset.uri || '');
+    };
+
+    restorePickerResult();
+  }, []);
 
   const authHeaders = token ? { 'x-auth-token': token } : {};
+
+  const applyPickedAsset = (asset, sourceLabel = 'picker') => {
+    if (!asset?.uri) {
+      setDebugMessage(`[${sourceLabel}] No usable asset URI returned.`);
+      return false;
+    }
+
+    setSelectedImageUri(asset.uri);
+    setSelectedImageName(asset.fileName || `profile-${Date.now()}.jpg`);
+    setSelectedImageType(asset.mimeType || 'image/jpeg');
+    setPreviewUri(asset.uri);
+    setDebugMessage(`[${sourceLabel}] Asset selected: ${asset.uri}`);
+    return true;
+  };
 
   const buildDisplayUser = (updates) => {
     const nextUser = { ...(user || {}), ...updates };
@@ -155,26 +188,36 @@ const SettingsScreen = () => {
       return;
     }
 
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert('Permission required', 'Allow photo library access to choose a profile image.');
-      return;
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert('Permission required', 'Allow photo library access to choose a profile image.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+        legacy: true,
+      });
+
+      if (!result.canceled && result.assets?.length) {
+        const asset = result.assets[0];
+        applyPickedAsset(asset, 'picker');
+        return;
+      }
+
+      const pendingResult = await ImagePicker.getPendingResultAsync();
+
+      if (!pendingResult?.canceled && pendingResult?.assets?.length) {
+        applyPickedAsset(pendingResult.assets[0], 'pending');
+        return;
+      }
+    } catch (error) {
+      Alert.alert('Picker error', error?.message || 'Could not open image picker.');
     }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-
-    if (result.canceled || !result.assets?.length) {
-      return;
-    }
-
-    const asset = result.assets[0];
-    setSelectedImage(asset);
-    setPreviewUri(asset.uri);
   };
 
   const handleUploadProfilePicture = async () => {
@@ -188,22 +231,16 @@ const SettingsScreen = () => {
       return;
     }
 
-    if (!selectedImage?.uri && !selectedImage?.file) {
+    if (!selectedImageUri) {
       Alert.alert('No image selected', 'Choose a profile image first.');
       return;
     }
-
     const formData = new FormData();
-
-    if (selectedImage.file) {
-      formData.append('image', selectedImage.file);
-    } else {
-      formData.append('image', {
-        uri: selectedImage.uri,
-        name: selectedImage.fileName || `profile-${Date.now()}.jpg`,
-        type: selectedImage.mimeType || 'image/jpeg',
-      });
-    }
+    formData.append('image', {
+      uri: selectedImageUri,
+      name: selectedImageName || `profile-${Date.now()}.jpg`,
+      type: selectedImageType || 'image/jpeg',
+    });
 
     try {
       setUploadingImage(true);
@@ -217,7 +254,9 @@ const SettingsScreen = () => {
       const imageUrl = response.data?.imageUrl || previewUri;
       updateUser({ imageUrl });
       setPreviewUri(imageUrl);
-      setSelectedImage(null);
+      setSelectedImageUri('');
+      setSelectedImageName('');
+      setSelectedImageType('image/jpeg');
       Alert.alert('Success', response.data?.message || 'Profile picture updated successfully');
     } catch (error) {
       Alert.alert('Upload failed', error?.response?.data?.message || error.message || 'Please try again');
