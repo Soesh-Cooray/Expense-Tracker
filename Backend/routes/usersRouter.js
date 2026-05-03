@@ -48,6 +48,9 @@ const createMailer = () => {
         host,
         port,
         secure: port === 465,
+        connectionTimeout: 15000,
+        greetingTimeout: 15000,
+        socketTimeout: 15000,
         auth: {
             user,
             pass,
@@ -120,22 +123,36 @@ router.post('/reset-password', async (req, res) => {
 
         const mailer = createMailer();
 
+        if (!mailer) {
+            return res.status(500).json({
+                message: 'Email service is not configured on the server',
+            });
+        }
+
         const { user: smtpUser } = getSmtpConfig();
 
-        await mailer.sendMail({
-            from: smtpUser,
-            to: normalizedEmail,
-            subject: 'Reset your password',
-            text: `Your password reset OTP is ${otp}. It expires in 10 minutes.`,
-            html: `
-                <p>You requested a password reset from the smart expense app.</p>
-                <p>Your OTP is: <strong>${otp}</strong></p>
-                <p>This OTP expires in 10 minutes.</p>
-            `,
-        });
+        try {
+            await mailer.sendMail({
+                from: smtpUser,
+                to: normalizedEmail,
+                subject: 'Reset your password',
+                text: `Your password reset OTP is ${otp}. It expires in 10 minutes.`,
+                html: `
+                    <p>You requested a password reset from the smart expense app.</p>
+                    <p>Your OTP is: <strong>${otp}</strong></p>
+                    <p>This OTP expires in 10 minutes.</p>
+                `,
+            });
+        } catch (mailError) {
+            console.error('Password reset email failed:', mailError.message);
+            return res.status(500).json({
+                message: 'Failed to send reset email. Check SMTP settings on the server.',
+            });
+        }
 
         res.json({ message: 'If an account exists for that email, an OTP has been sent.' });
     } catch (error) {
+        console.error('Reset password request failed:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
