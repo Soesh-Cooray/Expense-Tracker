@@ -132,6 +132,16 @@ router.post('/reset-password', async (req, res) => {
         const { user: smtpUser } = getSmtpConfig();
 
         try {
+            // Verify SMTP connectivity first to fail fast and provide clearer logs
+            try {
+                await mailer.verify();
+            } catch (verifyError) {
+                console.error('SMTP verify failed:', verifyError);
+                return res.status(500).json({
+                    message: 'SMTP verification failed. Check SMTP settings on the server.',
+                });
+            }
+
             await mailer.sendMail({
                 from: smtpUser,
                 to: normalizedEmail,
@@ -144,7 +154,7 @@ router.post('/reset-password', async (req, res) => {
                 `,
             });
         } catch (mailError) {
-            console.error('Password reset email failed:', mailError.message);
+            console.error('Password reset email failed:', mailError);
             return res.status(500).json({
                 message: 'Failed to send reset email. Check SMTP settings on the server.',
             });
