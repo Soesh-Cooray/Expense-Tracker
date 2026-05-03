@@ -60,9 +60,8 @@ const SettingsScreen = () => {
 
   const authHeaders = token ? { 'x-auth-token': token } : {};
 
-  const applyPickedAsset = (asset, sourceLabel = 'picker') => {
+  const applyPickedAsset = (asset) => {
     if (!asset?.uri) {
-      setDebugMessage(`[${sourceLabel}] No usable asset URI returned.`);
       return false;
     }
 
@@ -70,7 +69,6 @@ const SettingsScreen = () => {
     setSelectedImageName(asset.fileName || `profile-${Date.now()}.jpg`);
     setSelectedImageType(asset.mimeType || 'image/jpeg');
     setPreviewUri(asset.uri);
-    setDebugMessage(`[${sourceLabel}] Asset selected: ${asset.uri}`);
     return true;
   };
 
@@ -205,14 +203,14 @@ const SettingsScreen = () => {
 
       if (!result.canceled && result.assets?.length) {
         const asset = result.assets[0];
-        applyPickedAsset(asset, 'picker');
+        applyPickedAsset(asset);
         return;
       }
 
       const pendingResult = await ImagePicker.getPendingResultAsync();
 
       if (!pendingResult?.canceled && pendingResult?.assets?.length) {
-        applyPickedAsset(pendingResult.assets[0], 'pending');
+        applyPickedAsset(pendingResult.assets[0]);
         return;
       }
     } catch (error) {
