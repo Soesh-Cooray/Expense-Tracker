@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs'); 
 const jwt = require('jsonwebtoken'); 
 const crypto = require('crypto');
+const { google } = require('googleapis');
 const nodemailer = require('nodemailer');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
@@ -28,33 +29,53 @@ const upload = multer({
     },
 });
 
-const getSmtpConfig = () => {
-    const host = process.env.SMTP_HOST || process.env.MAIL_HOST;
-    const port = Number(process.env.SMTP_PORT || process.env.MAIL_PORT || 587);
-    const user = process.env.SMTP_USER || process.env.MAIL_USER;
-    const pass = process.env.SMTP_PASS || process.env.MAIL_PASS;
+const sendGmailApiEmail = async (toEmail, otp) => {
+    const emailUser = process.env.EMAIL_USER;
+    const clientId = process.env.GMAIL_CLIENT_ID;
+    const clientSecret = process.env.GMAIL_CLIENT_SECRET;
+    const refreshToken = process.env.GMAIL_REFRESH_TOKEN;
 
-    return { host, port, user, pass };
-};
-
-const createMailer = () => {
-    const { host, port, user, pass } = getSmtpConfig();
-
-    if (!host || !user || !pass) {
-        return null;
+    if (!emailUser || !clientId || !clientSecret || !refreshToken) {
+        throw new Error('Gmail OAuth2 environment variables are not fully configured');
     }
 
-    return nodemailer.createTransport({
-        host,
-        port,
-        secure: port === 465,
-        connectionTimeout: 15000,
-        greetingTimeout: 15000,
-        socketTimeout: 15000,
+    const oauth2Client = new google.auth.OAuth2(
+        clientId,
+        clientSecret,
+        'https://developers.google.com/oauthplayground'
+    );
+
+    oauth2Client.setCredentials({ refresh_token: refreshToken });
+
+    const accessTokenResponse = await oauth2Client.getAccessToken();
+    const accessToken = accessTokenResponse?.token || accessTokenResponse?.credentials?.access_token;
+
+    if (!accessToken) {
+        throw new Error('Failed to obtain Gmail OAuth2 access token');
+    }
+
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
         auth: {
-            user,
-            pass,
+            type: 'OAuth2',
+            user: emailUser,
+            clientId,
+            clientSecret,
+            refreshToken,
+            accessToken,
         },
+    });
+
+    await transporter.sendMail({
+        from: `Smart Expense Tracker <${emailUser}>`,
+        to: toEmail,
+        subject: 'Reset your password',
+        text: `You requested a password reset for Smart Expense Tracker. Your 6-digit OTP is ${otp}. It expires in 10 minutes.`,
+        html: `
+            <p>You requested a password reset for <strong>Smart Expense Tracker</strong>.</p>
+            <p>Your 6-digit OTP is: <strong>${otp}</strong></p>
+            <p>This OTP expires in 10 minutes.</p>
+        `,
     });
 };
 
@@ -121,42 +142,12 @@ router.post('/reset-password', async (req, res) => {
         user.resetPasswordOtpExpires = new Date(Date.now() + 10 * 60 * 1000);
         await user.save();
 
-        const mailer = createMailer();
-
-        if (!mailer) {
-            return res.status(500).json({
-                message: 'Email service is not configured on the server',
-            });
-        }
-
-        const { user: smtpUser } = getSmtpConfig();
-
         try {
-            // Verify SMTP connectivity first to fail fast and provide clearer logs
-            try {
-                await mailer.verify();
-            } catch (verifyError) {
-                console.error('SMTP verify failed:', verifyError);
-                return res.status(500).json({
-                    message: 'SMTP verification failed. Check SMTP settings on the server.',
-                });
-            }
-
-            await mailer.sendMail({
-                from: smtpUser,
-                to: normalizedEmail,
-                subject: 'Reset your password',
-                text: `Your password reset OTP is ${otp}. It expires in 10 minutes.`,
-                html: `
-                    <p>You requested a password reset from the smart expense app.</p>
-                    <p>Your OTP is: <strong>${otp}</strong></p>
-                    <p>This OTP expires in 10 minutes.</p>
-                `,
-            });
+            await sendGmailApiEmail(normalizedEmail, otp);
         } catch (mailError) {
             console.error('Password reset email failed:', mailError);
             return res.status(500).json({
-                message: 'Failed to send reset email. Check SMTP settings on the server.',
+                message: 'Failed to send reset email through Gmail API.',
             });
         }
 
