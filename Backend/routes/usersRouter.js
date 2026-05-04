@@ -4,7 +4,6 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken'); 
 const crypto = require('crypto');
 const { google } = require('googleapis');
-const nodemailer = require('nodemailer');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const User = require('../models/users');
@@ -47,36 +46,54 @@ const sendGmailApiEmail = async (toEmail, otp) => {
 
     oauth2Client.setCredentials({ refresh_token: refreshToken });
 
-    const accessTokenResponse = await oauth2Client.getAccessToken();
-    const accessToken = accessTokenResponse?.token || accessTokenResponse?.credentials?.access_token;
+    const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
-    if (!accessToken) {
-        throw new Error('Failed to obtain Gmail OAuth2 access token');
-    }
+    const textBody = `You requested a password reset for Smart Expense Tracker. Your 6-digit OTP is ${otp}. It expires in 10 minutes.`;
+    const htmlBody = `
+        <p>You requested a password reset for <strong>Smart Expense Tracker</strong>.</p>
+        <p>Your 6-digit OTP is: <strong>${otp}</strong></p>
+        <p>This OTP expires in 10 minutes.</p>
+    `;
+    const boundary = `boundary_${Date.now()}`;
 
-    const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            type: 'OAuth2',
-            user: emailUser,
-            clientId,
-            clientSecret,
-            refreshToken,
-            accessToken,
+    const message = [
+        `From: Smart Expense Tracker <${emailUser}>`,
+        `To: ${toEmail}`,
+        'Subject: Reset your password',
+        'MIME-Version: 1.0',
+        `Content-Type: multipart/alternative; boundary="${boundary}"`,
+        '',
+        `--${boundary}`,
+        'Content-Type: text/plain; charset="UTF-8"',
+        '',
+        textBody,
+        '',
+        `--${boundary}`,
+        'Content-Type: text/html; charset="UTF-8"',
+        '',
+        htmlBody,
+        '',
+        `--${boundary}--`,
+    ].join('\r\n');
+
+    const encodedMessage = Buffer.from(message)
+        .toString('base64')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/g, '');
+
+    const sendPromise = gmail.users.messages.send({
+        userId: 'me',
+        requestBody: {
+            raw: encodedMessage,
         },
     });
 
-    await transporter.sendMail({
-        from: `Smart Expense Tracker <${emailUser}>`,
-        to: toEmail,
-        subject: 'Reset your password',
-        text: `You requested a password reset for Smart Expense Tracker. Your 6-digit OTP is ${otp}. It expires in 10 minutes.`,
-        html: `
-            <p>You requested a password reset for <strong>Smart Expense Tracker</strong>.</p>
-            <p>Your 6-digit OTP is: <strong>${otp}</strong></p>
-            <p>This OTP expires in 10 minutes.</p>
-        `,
+    const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Gmail API send timed out')), 15000);
     });
+
+    await Promise.race([sendPromise, timeoutPromise]);
 };
 
 
