@@ -32,7 +32,20 @@ const recalculateSavedAmount = async (savingsGoalId, userId) => {
 router.post('/create', authMiddleware, async (req, res) => {
     try {
         const { targetAmount, goalName, dueDate } = req.body;
-        const savingsGoal = new SavingsGoal({ userId: req.user.id,targetAmount, goalName, dueDate });
+
+        if (!goalName || String(goalName).trim() === '') {
+            return res.status(400).json({ message: 'Goal name is required' });
+        }
+
+        if (!targetAmount || targetAmount <= 0) {
+            return res.status(400).json({ message: 'Target amount must be a positive number' });
+        }
+
+        if (!dueDate) {
+            return res.status(400).json({ message: 'Due date is required' });
+        }
+
+        const savingsGoal = new SavingsGoal({ userId: req.user.id, targetAmount, goalName, dueDate });
         await savingsGoal.save();
         res.status(201).json({ message: 'Goal created successfully', savingsGoal });
     } catch (error) {
@@ -76,7 +89,6 @@ router.delete('/delete/:id', authMiddleware, async (req, res) => {
 
 router.get('/transactions/all', authMiddleware, async (req, res) => {
     try {
-        // Finds all transactions where userId matches the authenticated user [cite: 32, 39]
         const transactions = await SavingsTransaction.find({ userId: req.user.id }).populate('savingsGoalId', 'goalName')
             .sort({ transactionDate: -1 }); // Optional: Sort by newest first
 
@@ -89,19 +101,17 @@ router.get('/transactions/all', authMiddleware, async (req, res) => {
     }
 });
 
-router.get('/:id/transactions', authMiddleware, async (req, res) => {
-    try {
-        const { id } = req.params;
-        const transactions = await SavingsTransaction.find({ savingsGoalId: id, userId: req.user.id }).populate('savingsGoalId', 'goalName');
-        res.json({ transactions });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
 router.post('/transactions/add', authMiddleware, async (req, res) => {
     try {
         const { amount, savingsGoalId, transactionDate } = req.body;
+
+        if (!amount || amount <= 0) {
+            return res.status(400).json({ message: 'Amount must be a positive number' });
+        }
+
+        if (!savingsGoalId) {
+            return res.status(400).json({ message: 'Savings goal ID is required' });
+        }
 
         const transaction = new SavingsTransaction({ userId: req.user.id, amount, savingsGoalId, transactionDate });
         await transaction.save();

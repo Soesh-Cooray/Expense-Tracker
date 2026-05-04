@@ -100,6 +100,11 @@ const sendGmailApiEmail = async (toEmail, otp) => {
 router.post('/register', async (req, res) => {
     try {
         const { username, password, name } = req.body;
+
+        if (String(password).length < 8) {
+            return res.status(400).json({ message: 'Password must be at least 8 characters long' });
+        }
+
         const existingUser = await User.findOne({ username });
         if (existingUser) return res.status(400).json({ message: "User already exists" });
 
@@ -187,8 +192,8 @@ router.post('/reset-password/confirm', async (req, res) => {
             return res.status(400).json({ message: 'OTP must be a 6-digit code' });
         }
 
-        if (String(password).length < 6) {
-            return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+        if (String(password).length < 8) {
+            return res.status(400).json({ message: 'Password must be at least 8 characters long' });
         }
 
         const normalizedEmail = email.trim().toLowerCase();
@@ -304,8 +309,8 @@ router.put('/change-password', authMiddleware, async (req, res) => {
             return res.status(400).json({ message: 'Current password and new password are required' });
         }
 
-        if (String(newPassword).length < 6) {
-            return res.status(400).json({ message: 'New password must be at least 6 characters long' });
+        if (String(newPassword).length < 8) {
+            return res.status(400).json({ message: 'New password must be at least 8 characters long' });
         }
 
         const user = await User.findById(req.user.id);
